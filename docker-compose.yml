@@ -3,14 +3,13 @@ version: '3'
 services:
   user_auth_service:
     build: ./user_auth_service
-    container_name: user_auth_service_container
     ports:
       - "9000:9000"
     depends_on:
-      - mysql_db
-  mysql_db:
+      - mysql
+
+  mysql:
     image: mysql:5.7
-    container_name: mysql_db_container
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
