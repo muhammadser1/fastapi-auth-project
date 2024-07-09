@@ -1,1 +1,2 @@
-docker exec -it mysql_db_container mysql -uroot2 -p
+docker exec -it fastapi-auth-project-mysql-1 mysql -uroot1 -p
+docker-compose up --build
