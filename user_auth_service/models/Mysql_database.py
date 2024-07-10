@@ -35,8 +35,19 @@ class Mysql_database(Database):
 
     def get_user_by_username(self, username: str):
         query = f"SELECT * FROM User WHERE username = '{username}'"
-        return self.__execute_query(query)
-
+        result= self.__execute_query(query)
+        if not result:
+            return []
+        formatted_response = [
+            {
+                "username": row[0],
+                "password_hash": row[1],
+                "email": row[2],
+                "role": row[3]
+            }
+            for row in result
+        ]
+        return formatted_response[0]
     def add_user_to_db(self, user: User):
         query = f"""INSERT INTO User (username, password_hash, email, role) VALUES ('{user.username}', '{user.password}','{user.email}', '{user.role}');"""
         print(query)
