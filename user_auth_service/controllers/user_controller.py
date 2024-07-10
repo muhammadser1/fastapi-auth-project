@@ -68,8 +68,7 @@ def login_in(username: str, password: str, auth_db=Depends(get_db)):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         if not verify_password(existing_user["password_hash"], password):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-
-        token_payload = {"sub": existing_user.username, "role": existing_user.role}
+        token_payload = {"sub": existing_user["username"], "role": existing_user["role"]}
         access_token = generate_jwt(token_payload)
 
         response = JSONResponse(content={"message": "User signed in successfully"})
@@ -79,3 +78,14 @@ def login_in(username: str, password: str, auth_db=Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Failed to process the request") from e
+
+
+@user_router.post("/logout")
+def logout():
+    """
+    Endpoint to log out the current user.
+    Clears the access_token cookie to invalidate the session.
+    """
+    response = JSONResponse(content={"message": "User logged out successfully"})
+    response.delete_cookie("access_token")
+    return response
