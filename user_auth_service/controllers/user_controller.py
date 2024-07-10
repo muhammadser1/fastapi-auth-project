@@ -3,6 +3,8 @@ from models.schemas import User
 from models.Mysql_database import get_db
 from utils.password_utils import hash_password
 from utils.password_utils import verify_password
+from utils.jwt_manager import generate_jwt
+from fastapi.responses import JSONResponse
 
 user_router = APIRouter()
 
@@ -36,12 +38,18 @@ def sign_up(user: User, auth_db=Depends(get_db)):
 
         # Add the user to the database
         auth_db.add_user_to_db(user)
-        # token
 
-        return {"message": "User signed up successfully"}
+        token_payload = {"sub": user.username, "role": user.role}
+        access_token = generate_jwt(token_payload)
+
+        response = JSONResponse(content={"message": "User signed up successfully"})
+        response.set_cookie(key="access_token", value=access_token, httponly=True)
+        return response
 
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Failed to process the request") from e
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Failed to process the request") from e
+
 
 @user_router.post("/token")
 def login_in(username: str, password: str, auth_db=Depends(get_db)):
@@ -53,11 +61,21 @@ def login_in(username: str, password: str, auth_db=Depends(get_db)):
     :param auth_db: Dependency to access the database.
     :return: Message indicating successful authentication
     """
-    existing_user = auth_db.get_user_by_username(username)
+    try:
+        existing_user = auth_db.get_user_by_username(username)
 
-    if not existing_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    if not verify_password(existing_user["password_hash"], password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    #token
-    return (existing_user)
+        if not existing_user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        if not verify_password(existing_user["password_hash"], password):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+        token_payload = {"sub": existing_user.username, "role": existing_user.role}
+        access_token = generate_jwt(token_payload)
+
+        response = JSONResponse(content={"message": "User signed in successfully"})
+        response.set_cookie(key="access_token", value=access_token, httponly=True)
+        return response
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Failed to process the request") from e
